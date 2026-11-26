@@ -1,0 +1,54 @@
+@startuml
+title Record Consignment Status - Sequence Diagram
+
+actor "Depot Worker" as Worker
+participant "ConsignmentStatusCoordinator" as Controller
+participant "AuthService" as Auth
+participant "ConsignmentRepository" as ConsRepo
+participant "RouteRepository" as RouteRepo
+participant "Consignment" as Consignment
+participant "Route" as Route
+
+Worker -> Controller : recordConsignmentStatus(consignmentId,\nrouteId, receiptDetails, checkingDetails)
+activate Controller
+
+Controller -> Auth : isAuthorizedDepotWorker()
+Auth --> Controller : authorized
+
+alt Worker is authorized
+    Controller -> ConsRepo : findById(consignmentId)
+    ConsRepo --> Controller : consignment
+
+    Controller -> RouteRepo : findById(routeId)
+    RouteRepo --> Controller : route
+
+    Controller -> Route : isAvailable()
+    Route --> Controller : available
+
+    alt Route is available
+        Controller -> Consignment : validateStatusChange()
+        Consignment --> Controller : valid
+
+        alt Status change is valid
+            Controller -> Consignment : recordReceipt(receiptDetails)
+            Consignment --> Controller : receipt
+
+            Controller -> Consignment : recordChecking(checkingDetails)
+            Consignment --> Controller : checkingRecord
+
+            Controller -> Consignment : assignRoute(route)
+            Consignment --> Controller : assigned
+
+            Controller --> Worker : accepted(consignmentReference)
+        else Invalid status change
+            Controller --> Worker : ConsignmentStatusResult(INVALID_DATA)
+        end
+    else Route unavailable
+        Controller --> Worker : ConsignmentStatusResult(UNAVAILABLE)
+    end
+else Worker not authorized
+    Controller --> Worker : ConsignmentStatusResult(AUTHENTICATION_FAILED)
+end
+
+deactivate Controller
+@enduml

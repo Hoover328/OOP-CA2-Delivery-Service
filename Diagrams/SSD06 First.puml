@@ -1,0 +1,31 @@
+@startuml
+hide footbox
+
+actor "Depot Worker" as Staff
+participant "Regional Delivery Coordination Service" as System
+
+Staff -> System : recordConsignmentStatus(consignmentId, routeId, receiptDetails, checkingDetails)
+
+activate System
+
+alt authentication failed
+    System --> Staff: refused(AUTHENTICATION_FAILED)
+else no consignments available
+    System --> Staff: refused(UNAVAILABLE)
+else receipt already marked
+    System --> Staff: refused(ALREADY_MARKED)
+else consignment not recorded yet (missing receipt)
+    System --> Staff: refused(NOT_MARKED)
+else consignment has not been checked
+    System --> Staff: refused(NOT_CHECKED)
+else checking contains invalid data or records invalid
+    System --> Staff: refused(INVALID_DATA)
+else consignments are not separate
+    System --> Staff: refused(INVALID_CONSIGNMENTS)
+else request valid
+    System --> Staff: accepted(consignmentReference)
+end
+
+deactivate System
+
+@enduml

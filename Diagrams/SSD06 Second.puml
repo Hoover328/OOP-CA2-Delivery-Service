@@ -1,0 +1,51 @@
+@startuml
+
+hide footbox
+
+title UC06 - Record Consignment Status
+
+actor "Depot Worker" as Staff
+participant "Regional Delivery Coordination Service" as System
+
+== Record Receipt ==
+
+Staff -> System: recordReceipt(consignmentID, details)
+activate System
+
+alt Receipt information valid
+    System --> Staff: accepted(receiptReference)
+else Receipt invalid or already recorded
+    System --> Staff: refused(error)
+end
+
+deactivate System
+
+== Record Checking ==
+
+Staff -> System: recordChecking(consignmentID, details)
+activate System
+
+alt Receipt recorded and checking valid
+    System --> Staff: accepted(checkingResult)
+else Receipt missing or checking invalid
+    System --> Staff: refused(error)
+end
+
+deactivate System
+
+== Assign Consignment to Route ==
+
+Staff -> System: assignConsignmentToRoute(consignmentID, routeID)
+activate System
+
+alt Checking accepted and assignment valid
+    System --> Staff: accepted(assignmentReference)
+else Checking incomplete or rejected
+    System --> Staff: refused(NOT_CHECKED)
+else Assignment information invalid
+    System --> Staff: refused(INVALID_DATA)
+end
+
+deactivate System
+
+@enduml

@@ -1,0 +1,64 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+class ConsignmentStatusCoordinator <<controller>> {
+  + recordConsignmentStatus(consignmentId: int, routeId: int,
+    receiptDetails: ReceiptDetails,
+    checkingDetails: CheckingDetails): ConsignmentStatusResult
+}
+
+class Consignment <<entity>> {
+- consignmentId: int
+- quantity: int
+- label: String
+- description: String
+- status: ConsignmentStatus
+  + recordReceipt(details: ReceiptDetails): Receipt
+  + recordChecking(details: CheckingDetails): CheckingRecord
+  + assignRoute(route: Route): void
+  + validateStatusChange(): boolean
+}
+
+class Receipt <<entity>> {
+- receiptId: int
+- recordedAt: LocalDateTime
+  + create(details: ReceiptDetails): Receipt
+}
+
+class CheckingRecord <<entity>> {
+- checkingId: int
+- quantityStatus: CheckOutcome
+- conditionStatus: CheckOutcome
+- labelValid: boolean
+  + create(details: CheckingDetails): CheckingRecord
+}
+
+class Route <<entity>> {
+- routeId: int
+- routeCode: String
+  + isAvailable(): boolean
+}
+
+interface ConsignmentRepository {
+  + findById(consignmentId: int): Consignment
+  + save(consignment: Consignment): void
+}
+
+interface RouteRepository {
+  + findById(routeId: int): Route
+}
+
+interface AuthService {
+  + isAuthorizedDepotWorker(): boolean
+}
+
+ConsignmentStatusCoordinator ..> AuthService
+ConsignmentStatusCoordinator ..> ConsignmentRepository
+ConsignmentStatusCoordinator ..> RouteRepository
+ConsignmentRepository ..> Consignment
+RouteRepository ..> Route
+
+Consignment "1" *-- "0..1" Receipt
+Consignment "1" *-- "0..1" CheckingRecord
+Consignment "0..*" --> "0..1" Route
+@enduml
